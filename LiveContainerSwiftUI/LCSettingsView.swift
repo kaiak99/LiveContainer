@@ -133,7 +133,7 @@ struct LCSettingsView: View {
                     Picker(selection: $JITEnabler) {
                         Text("SideJITServer/JITStreamer 2.0").tag(JITEnablerType.SideJITServer)
                         Text("StikDebug").tag(JITEnablerType.StkiJIT)
-                        Text("StikDebug (Another LiveContainer)").tag(JITEnablerType.StikJITLC)
+                        Text("StikDebug (Another EzTool)").tag(JITEnablerType.StikJITLC)
                         Text("SideStore").tag(JITEnablerType.SideStore)
                         Text("JitStreamer-EB (Relaunch)").tag(JITEnablerType.JITStreamerEBLegacy)
                     } label: {
