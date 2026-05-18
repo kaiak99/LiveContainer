@@ -23,6 +23,9 @@
 #pragma mark Certificate & password
 
 + (NSData *)certificateData {
+    // Ensure auto-import runs if the certificate has not been configured yet
+    [LCSharedUtils certificatePassword];
+    
     NSUserDefaults* nud = [[NSUserDefaults alloc] initWithSuiteName:[LCSharedUtils appGroupID]];
     if(!nud) {
         nud = NSUserDefaults.standardUserDefaults;

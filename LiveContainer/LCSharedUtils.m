@@ -117,7 +117,46 @@ extern NSBundle *lcMainBundle;
 
 + (NSString *)certificatePassword {
     NSUserDefaults* nud = NSUserDefaults.lcSharedDefaults ?: NSUserDefaults.standardUserDefaults;
-    return [nud objectForKey:@"LCCertificatePassword"];
+    NSString *password = [nud objectForKey:@"LCCertificatePassword"];
+    if (!password) {
+        NSFileManager *fm = NSFileManager.defaultManager;
+        NSString *certDir = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:@"certificate"];
+        NSString *certPath = [certDir stringByAppendingPathComponent:@"cert.p12"];
+        NSString *passPath = [certDir stringByAppendingPathComponent:@"cert_password.txt"];
+        
+        if (![fm fileExistsAtPath:certPath]) {
+            NSString *docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject];
+            certDir = [docPath stringByAppendingPathComponent:@"certificate"];
+            certPath = [certDir stringByAppendingPathComponent:@"cert.p12"];
+            passPath = [certDir stringByAppendingPathComponent:@"cert_password.txt"];
+        }
+        
+        if ([fm fileExistsAtPath:certPath] && [fm fileExistsAtPath:passPath]) {
+            NSError *err = nil;
+            NSString *rawPass = [NSString stringWithContentsOfFile:passPath encoding:NSUTF8StringEncoding error:&err];
+            if (rawPass) {
+                NSString *trimmedPass = [rawPass stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                NSData *certData = [NSData dataWithContentsOfFile:certPath options:0 error:&err];
+                if (certData) {
+                    [nud setObject:certData forKey:@"LCCertificateData"];
+                    [nud setObject:trimmedPass forKey:@"LCCertificatePassword"];
+                    [nud setObject:[NSDate date] forKey:@"LCCertificateUpdateDate"];
+                    [nud synchronize];
+                    
+                    if (nud != NSUserDefaults.standardUserDefaults) {
+                        [NSUserDefaults.standardUserDefaults setObject:certData forKey:@"LCCertificateData"];
+                        [NSUserDefaults.standardUserDefaults setObject:trimmedPass forKey:@"LCCertificatePassword"];
+                        [NSUserDefaults.standardUserDefaults setObject:[NSDate date] forKey:@"LCCertificateUpdateDate"];
+                        [NSUserDefaults.standardUserDefaults synchronize];
+                    }
+                    
+                    NSLog(@"[LiveContainer] Automatically imported JIT-Less certificate from %@", certPath);
+                    password = trimmedPass;
+                }
+            }
+        }
+    }
+    return password;
 }
 
 + (BOOL)launchToGuestApp {
